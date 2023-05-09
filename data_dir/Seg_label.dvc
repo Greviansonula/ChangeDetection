@@ -1,0 +1,5 @@
+outs:
+- md5: cdbc421555a0419c49adb4e09ccac457.dir
+  size: 9454752
+  nfiles: 144
+  path: Seg_label
