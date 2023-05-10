@@ -5,7 +5,6 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import ToTensor
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.torch_utils import select_device
-from unet import unet_model
 import os
 from PIL import Image
 from torch.utils.data import Dataset
