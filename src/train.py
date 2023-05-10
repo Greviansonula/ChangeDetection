@@ -66,12 +66,6 @@ for batch in test_loader:
         # Pass the extracted features through UNet
         unet_outputs = unet_model(yolo_outputs)
 
-        # Process the outputs as per your requirements
-
-        # If segmentation functionality is enabled, apply the segmentation logic
-
-        # Obtain the localization and segmentation results
-
-        # Perform any necessary post-processing or evaluation
+        
 
 
