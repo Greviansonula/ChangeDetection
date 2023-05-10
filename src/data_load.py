@@ -12,51 +12,34 @@ from PIL import Image
 import xml.etree.ElementTree as ET
 
 class ChangeDetectionDataset(Dataset):
-    def __init__(self, folder_A, folder_B, folder_ide_label, folder_seg_label, transform=None):
-        self.folder_A = folder_A
-        self.folder_B = folder_B
-        self.folder_ide_label = folder_ide_label
-        self.folder_seg_label = folder_seg_label
-        self.transform = transform
-        self.image_files_A = sorted(os.listdir(folder_A))
-        self.image_files_B = sorted(os.listdir(folder_B))
-        self.xml_files = sorted(os.listdir(folder_ide_label))
-        self.tif_files = sorted(os.listdir(folder_seg_label))
+    def __init__(self, root_dir):
+        self.root_dir = root_dir
+        self.image_A_folder = os.path.join(root_dir, 'A')
+        self.image_B_folder = os.path.join(root_dir, 'B')
+        self.seg_label_folder = os.path.join(root_dir, 'Seg_label')
+        self.ide_label_folder = os.path.join(root_dir, 'Ide_label')
+
+        self.image_filenames = os.listdir(self.image_A_folder)
+        self.image_filenames.sort()
 
     def __len__(self):
-        return len(self.image_files_A)
+        return len(self.image_filenames)
 
     def __getitem__(self, idx):
-        # Load image A
-        image_path_A = os.path.join(self.folder_A, self.image_files_A[idx])
-        image_A = Image.open(image_path_A).convert("RGB")
+        image_A_path = os.path.join(self.image_A_folder, self.image_filenames[idx])
+        image_B_path = os.path.join(self.image_B_folder, self.image_filenames[idx])
+        seg_label_path = os.path.join(self.seg_label_folder, self.image_filenames[idx].replace('.tif', '.xml'))
 
-        # Load image B
-        image_path_B = os.path.join(self.folder_B, self.image_files_B[idx])
-        image_B = Image.open(image_path_B).convert("RGB")
-
-        # Load XML file
-        xml_path = os.path.join(self.folder_ide_label, self.xml_files[idx])
-        tree = ET.parse(xml_path)
-        root = tree.getroot()
-
-        # Extract bounding box coordinates from XML
-        bboxes = []
-        for obj in root.iter("object"):
-            bbox = obj.find("bndbox")
-            xmin = int(bbox.find("xmin").text)
-            ymin = int(bbox.find("ymin").text)
-            xmax = int(bbox.find("xmax").text)
-            ymax = int(bbox.find("ymax").text)
-            bboxes.append([xmin, ymin, xmax, ymax])
+        # Load image A and B
+        image_A = Image.open(image_A_path).convert('RGB')
+        image_B = Image.open(image_B_path).convert('RGB')
 
         # Load segmentation label
-        tif_path = os.path.join(self.folder_seg_label, self.tif_files[idx])
-        seg_label = Image.open(tif_path).convert("L")
+        tree = ET.parse(seg_label_path)
+        root = tree.getroot()
+        seg_label = root.find('object').find('name').text
 
-        if self.transform:
-            image_A = self.transform(image_A)
-            image_B = self.transform(image_B)
-            seg_label = self.transform(seg_label)
+        # Convert segmentation label to tensor
+        seg_label = torch.tensor(int(seg_label), dtype=torch.long)
 
-        return {"image_A": image_A, "image_B": image_B, "bboxes": bboxes, "seg_label": seg_label}
+        return image_A, image_B, seg_label

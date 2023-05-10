@@ -30,7 +30,7 @@ batch_size = 16
 num_epochs = 10
 
 transform = ToTensor()  # Adjust the transformation based on your data requirements
-train_dataset = ChangeDetectionDataset('../data_dir/A', '../data_dir/A', '../data_dir/Ide_label', '../data_dir/Seg_label', transform=transform)
+train_dataset = ChangeDetectionDataset('../data_dir')
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
 for epoch in range(num_epochs):
