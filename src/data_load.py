@@ -5,62 +5,58 @@ from torchvision.transforms import ToTensor
 from PIL import Image
 import xml.etree.ElementTree as ET
 
+import os
+import torch
+from torch.utils.data import Dataset
+from PIL import Image
+import xml.etree.ElementTree as ET
+
 class ChangeDetectionDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
-        self.root_dir = root_dir
+    def __init__(self, folder_A, folder_B, folder_ide_label, folder_seg_label, transform=None):
+        self.folder_A = folder_A
+        self.folder_B = folder_B
+        self.folder_ide_label = folder_ide_label
+        self.folder_seg_label = folder_seg_label
         self.transform = transform
-        self.image_filenames = sorted(os.listdir(os.path.join(root_dir, 'images')))
-        self.label_filenames = sorted(os.listdir(os.path.join(root_dir, 'labels')))
+        self.image_files_A = sorted(os.listdir(folder_A))
+        self.image_files_B = sorted(os.listdir(folder_B))
+        self.xml_files = sorted(os.listdir(folder_ide_label))
+        self.tif_files = sorted(os.listdir(folder_seg_label))
 
     def __len__(self):
-        return len(self.image_filenames)
+        return len(self.image_files_A)
 
     def __getitem__(self, idx):
-        image_path = os.path.join(self.root_dir, 'images', self.image_filenames[idx])
-        label_path = os.path.join(self.root_dir, 'labels', self.label_filenames[idx])
+        # Load image A
+        image_path_A = os.path.join(self.folder_A, self.image_files_A[idx])
+        image_A = Image.open(image_path_A).convert("RGB")
 
-        image = Image.open(image_path).convert('RGB')
-        label = Image.open(label_path).convert('L')  # Convert label to grayscale
+        # Load image B
+        image_path_B = os.path.join(self.folder_B, self.image_files_B[idx])
+        image_B = Image.open(image_path_B).convert("RGB")
+
+        # Load XML file
+        xml_path = os.path.join(self.folder_ide_label, self.xml_files[idx])
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+
+        # Extract bounding box coordinates from XML
+        bboxes = []
+        for obj in root.iter("object"):
+            bbox = obj.find("bndbox")
+            xmin = int(bbox.find("xmin").text)
+            ymin = int(bbox.find("ymin").text)
+            xmax = int(bbox.find("xmax").text)
+            ymax = int(bbox.find("ymax").text)
+            bboxes.append([xmin, ymin, xmax, ymax])
+
+        # Load segmentation label
+        tif_path = os.path.join(self.folder_seg_label, self.tif_files[idx])
+        seg_label = Image.open(tif_path).convert("L")
 
         if self.transform:
-            image = self.transform(image)
-            label = self.transform(label)
+            image_A = self.transform(image_A)
+            image_B = self.transform(image_B)
+            seg_label = self.transform(seg_label)
 
-        return image, label
-
-# class ChangeDetectionDataset(Dataset):
-#     def __init__(self, data_dir):
-#         self.data_dir = data_dir
-#         self.image_dir = os.path.join(data_dir, "images")
-#         self.label_dir = os.path.join(data_dir, "labels")
-#         self.xml_dir = os.path.join(data_dir, "xml")
-
-#         self.image_filenames = sorted(os.listdir(self.image_dir))
-#         self.label_filenames = sorted(os.listdir(self.label_dir))
-#         self.xml_filenames = sorted(os.listdir(self.xml_dir))
-
-#         self.transform = ToTensor()
-
-#     def __len__(self):
-#         return len(self.image_filenames)
-
-#     def __getitem__(self, index):
-#         image_filename = self.image_filenames[index]
-#         label_filename = self.label_filenames[index]
-#         xml_filename = self.xml_filenames[index]
-
-#         image_path = os.path.join(self.image_dir, image_filename)
-#         label_path = os.path.join(self.label_dir, label_filename)
-#         xml_path = os.path.join(self.xml_dir, xml_filename)
-
-#         image = Image.open(image_path).convert("RGB")
-#         label = Image.open(label_path).convert("L")
-#         xml_tree = ET.parse(xml_path)
-
-#         sample = {
-#             "image": self.transform(image),
-#             "label": self.transform(label),
-#             "xml_tree": xml_tree
-#         }
-
-#         return sample
+        return {"image_A": image_A, "image_B": image_B, "bboxes": bboxes, "seg_label": seg_label}

@@ -14,7 +14,7 @@ from data_load import ChangeDetectionDataset
 
 
 device = select_device('')  # Use an empty string to automatically select a device
-yolo_model = attempt_load('weights/yolov5s.pt', map_location=device)  # Adjust the path to your pre-trained model
+yolo_model = attempt_load('weights/yolov5s.pt')  # Adjust the path to your pre-trained model
 yolo_model.eval()
 
 in_ch = 3  # Number of input channels (e.g., RGB images)
@@ -30,7 +30,7 @@ batch_size = 16
 num_epochs = 10
 
 transform = ToTensor()  # Adjust the transformation based on your data requirements
-train_dataset = ChangeDetectionDataset('data_train', transform=transform)
+train_dataset = ChangeDetectionDataset('../data_dir/A', '../data_dir/A', '../data_dir/Ide_label', '../data_dir/Seg_label', transform=transform)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
 for epoch in range(num_epochs):
