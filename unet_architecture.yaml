@@ -1,0 +1,56 @@
+model:
+  type: UNet
+  in_channels: 3
+  out_channels: 1
+
+  backbone:
+    type: DoubleConv
+    in_channels: 3
+    out_channels: 64
+
+  encoder:
+    blocks:
+      - type: DoubleConv
+        in_channels: 64
+        out_channels: 128
+      - type: DoubleConv
+        in_channels: 128
+        out_channels: 256
+      - type: DoubleConv
+        in_channels: 256
+        out_channels: 512
+      - type: DoubleConv
+        in_channels: 512
+        out_channels: 1024
+
+  decoder:
+    blocks:
+      - type: UpConv
+        in_channels: 1024
+        out_channels: 512
+      - type: DoubleConv
+        in_channels: 1024
+        out_channels: 512
+      - type: UpConv
+        in_channels: 512
+        out_channels: 256
+      - type: DoubleConv
+        in_channels: 512
+        out_channels: 256
+      - type: UpConv
+        in_channels: 256
+        out_channels: 128
+      - type: DoubleConv
+        in_channels: 256
+        out_channels: 128
+      - type: UpConv
+        in_channels: 128
+        out_channels: 64
+      - type: DoubleConv
+        in_channels: 128
+        out_channels: 64
+      - type: Conv2d
+        in_channels: 64
+        out_channels: 1
+        kernel_size: 1
+
